@@ -19,13 +19,15 @@ model User {
   name          String?
   emailVerified Boolean
   image         String?
-  roles         Role @default(USER)
+  role          String? @default("users")
   createdAt     DateTime
   updatedAt     DateTime
 
   @@map("user")
   Account Account[]
   Session Session[]
+  answers   Answer[]  // Relasi ke jawaban yang diberikan oleh user
+  sessions  TryoutSession[]
 }
 
 model Session {
@@ -74,7 +76,80 @@ model Verification {
 }
 
 
-enum Role{
-  ADMIN
-  USER
+model Answer {
+  id             String    @id @default(uuid())  // ID unik untuk jawaban
+  userId         String    // ID user yang menjawab soal
+  questionId     String    // ID soal yang dijawab
+  optionId       String    // ID pilihan yang dipilih
+  tryoutPackageId String   // ID paket tryout yang diikuti peserta
+  createdAt      DateTime  @default(now()) // Waktu jawaban dibuat
+  updatedAt      DateTime  @updatedAt // Waktu diperbarui
+
+  // Relasi ke User dan Question
+  user           User      @relation(fields: [userId], references: [id])
+  question       Question  @relation(fields: [questionId], references: [id])
+  option         Option    @relation(fields: [optionId], references: [id])
+  tryoutPackage  TryoutPackage @relation(fields: [tryoutPackageId], references: [id])
 }
+
+model Option {
+  id          String   @id @default(uuid()) // ID unik pilihan
+  text        String   // Isi pilihan jawaban
+  questionId  String   // Relasi ke soal
+  question    Question @relation(fields: [questionId], references: [id])
+  points      Int      // Poin untuk pilihan jawaban
+  isCorrect   Boolean  // Apakah pilihan ini benar
+
+  Answer Answer[]
+}
+
+model Question {
+  id          String   @id @default(uuid()) // ID unik soal
+  text        String   // Isi soal
+  categoryId  String   // Relasi ke kategori soal
+  category    Category @relation(fields: [categoryId], references: [id]) // Relasi ke Category
+  options     Option[] // Relasi ke pilihan jawaban
+  createdAt   DateTime @default(now()) // Waktu dibuat
+  updatedAt   DateTime @updatedAt // Waktu diperbarui
+
+  TryoutPackage TryoutPackage[] @relation("TryoutPackageQuestions")
+
+  Answer Answer[]
+}
+
+model Category {
+  id        String    @id @default(uuid()) // ID kategori soal
+  name      String    // Nama kategori soal
+  createdAt DateTime  @default(now()) // Waktu dibuat
+  updatedAt DateTime  @updatedAt // Waktu diperbarui
+  questions Question[] // Relasi ke soal-soal dalam kategori
+}
+
+model TryoutPackage {
+  id          String    @id @default(uuid()) // ID untuk paket tryout
+  name        String    // Nama paket tryout (misal Paket A, Paket B)
+  isSequential Boolean  // Apakah soal dalam paket ini urut atau acak
+  createdAt   DateTime  @default(now()) // Waktu dibuat
+  updatedAt   DateTime  @updatedAt // Waktu diperbarui
+  questions   Question[] @relation("TryoutPackageQuestions") // Relasi ke soal-soal dalam paket
+  sessions    TryoutSession[] // Relasi ke sesi pengguna yang mengikuti paket ini
+
+  Answer Answer[]
+}
+
+
+model TryoutSession {
+  id              String    @id @default(uuid()) // ID unik untuk sesi pengguna
+  userId          String    // ID pengguna yang mengikuti paket soal
+  tryoutPackageId String    // ID paket tryout yang diikuti
+  startTime       DateTime  // Waktu mulai sesi
+  endTime         DateTime  // Waktu berakhir sesi
+  status          String    // Status sesi (misalnya: "active", "completed", "expired")
+  createdAt       DateTime  @default(now()) // Waktu sesi dibuat
+  updatedAt       DateTime  @updatedAt // Waktu diperbarui
+
+  // Relasi ke User dan TryoutPackage
+  user            User      @relation(fields: [userId], references: [id])
+  tryoutPackage   TryoutPackage @relation(fields: [tryoutPackageId], references: [id])
+}
+

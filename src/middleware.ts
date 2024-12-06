@@ -53,23 +53,25 @@ export default async function middleware(request: NextRequest) {
     );
   }
 
-  const { data: session } = await betterFetch<Session>(
-    "/api/auth/get-session",
-    {
-      baseURL: request.nextUrl.origin,
-      headers: {
-        //get the cookie from the request
-        cookie: request.headers.get("cookie") || "",
-      },
-    }
-  );
+  const { data: session } = await betterFetch<any>("/api/auth/get-session", {
+    baseURL: request.nextUrl.origin,
+    headers: {
+      //get the cookie from the request
+      cookie: request.headers.get("cookie") || "",
+    },
+  });
 
-  const isProtected = pathMatches(["/admin"]);
+  console.log(session?.user.role);
 
-  console.log(session, isProtected, pathname);
+  const isAdmin = pathMatches(["/admin", "/admin/*"]);
+  const isProtected = pathMatches(["/me/*", "/me"]);
 
-  if (!session && isProtected) {
+  if (!session && (isAdmin || isProtected)) {
     return NextResponse.redirect(new URL("/sign-in", request.url));
+  }
+
+  if (session?.user.role != "admin" && isAdmin) {
+    return NextResponse.redirect(new URL("/me", request.url));
   }
 
   return NextResponse.next();

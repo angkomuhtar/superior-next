@@ -28,6 +28,7 @@ import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { redirect } from "next/navigation";
 
 const page = () => {
   const [loading, setLoading] = useState<boolean>(false);
@@ -46,19 +47,25 @@ const page = () => {
       {
         email,
         password,
-        callbackURL: "/admin",
       },
       {
         onRequest: (ctx) => {
           setLoading(true);
         },
         onSuccess: (ctx) => {
+          console.log(ctx.data.user.role);
+
           setLoading(false);
           form.reset();
           toast({
             title: "Success",
             description: "You account have been created.",
           });
+          if (ctx.data.user.role == "admin") {
+            redirect("/dashboard");
+          } else {
+            redirect("/me");
+          }
         },
         onError: (ctx) => {
           setLoading(false);

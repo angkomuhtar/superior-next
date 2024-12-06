@@ -28,6 +28,7 @@ import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { redirect } from "next/navigation";
 
 const signUpPage = () => {
   const form = useForm<z.infer<typeof formSchema>>({
@@ -48,7 +49,7 @@ const signUpPage = () => {
         email,
         password,
         name,
-        callbackURL: "/sign-in",
+        role: "users",
       },
       {
         onRequest: (ctx) => {
@@ -61,6 +62,7 @@ const signUpPage = () => {
             title: "Success",
             description: "You account have been created.",
           });
+          redirect("/sign-in");
         },
         onError: (ctx) => {
           setLoading(false);
